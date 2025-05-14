@@ -1,0 +1,43 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Instalar dependencias
+        run: pip install pandas matplotlib
+
+      - name: Ejecutar script de Python
+        run: python script.py
+
+      - name: Crear archivo .nojekyll
+        run: touch .nojekyll
+
+      - name: Subir artefacto para GitHub Pages
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: .
+
+deploy:
+  needs: build
+  runs-on: ubuntu-latest
+  permissions:
+    pages: write
+    id-token: write
+
+  steps:
+    - name: Desplegar a GitHub Pages
+      uses: actions/deploy-pages@v2
