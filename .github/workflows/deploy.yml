@@ -36,8 +36,9 @@ jobs:
         run: touch .nojekyll
 
       - name: Subir artefactos para Pages
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
+          name: pages-artifact
           path: .
 
   deploy:
