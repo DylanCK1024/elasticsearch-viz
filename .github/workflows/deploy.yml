@@ -48,7 +48,13 @@ jobs:
       run: |
         netstat -tuln
 
-    # Ejemplo de tu script de Python
+    # Instalar dependencias de Python, incluyendo elasticsearch
+    - name: Instalar dependencias de Python
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install elasticsearch
+
+    # Ejecutar script.py
     - name: Ejecutar script.py
       run: |
         python3 script.py
