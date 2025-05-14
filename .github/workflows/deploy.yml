@@ -48,11 +48,11 @@ jobs:
       run: |
         netstat -tuln
 
-    # Instalar dependencias de Python, incluyendo elasticsearch y pandas
+    # Instalar dependencias de Python, incluyendo elasticsearch, pandas y matplotlib
     - name: Instalar dependencias de Python
       run: |
         python3 -m pip install --upgrade pip
-        pip install elasticsearch pandas
+        pip install elasticsearch pandas matplotlib
 
     # Ejecutar script.py
     - name: Ejecutar script.py
