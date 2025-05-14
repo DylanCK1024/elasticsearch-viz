@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,16 +16,6 @@ jobs:
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
-
-      - name: Configurar Git
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@users.noreply.github.com"
-
-      - name: Limpiar estado del repositorio
-        run: |
-          git reset --hard
-          git clean -fd
 
       - name: Configurar Python
         uses: actions/setup-python@v5
@@ -36,29 +31,15 @@ jobs:
       - name: Crear archivo .nojekyll
         run: touch .nojekyll
 
+      - name: Subir archivos como artefacto
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: .
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout del repositorio
-        uses: actions/checkout@v4
-
-      - name: Configurar Git
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@users.noreply.github.com"
-
-      - name: Crear la rama gh-pages si no existe
-        run: |
-          git fetch origin
-          git checkout --orphan gh-pages  # Crea una rama huérfana
-          git reset --hard
-          git clean -fd
-          git push origin gh-pages --force  # Empuja la rama gh-pages al repositorio
-
-      - name: Subir a GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: ./  # O la ruta de tus archivos generado
+      - name: Desplegar en GitHub Pages
+        uses: actions/deploy-pages@v3
