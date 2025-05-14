@@ -1,53 +1,46 @@
-name: Elasticsearch Viz
+name: Build and Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
-  run:
+  build:
     runs-on: ubuntu-latest
-    services:
-      elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
-        ports:
-          - 9200:9200
-        options: >-
-          --health-cmd="curl --silent --fail http://localhost:9200/_cluster/health || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Configurar Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Instalar dependencias
         run: |
-          python3 -m pip install --upgrade pip
-          pip install elasticsearch pandas matplotlib seaborn
+          pip install pandas matplotlib seaborn  # Instalamos seaborn junto con pandas y matplotlib
 
-      - name: Wait for Elasticsearch to be ready
-        run: |
-          echo "⏳ Esperando a que Elasticsearch esté disponible..."
-          for i in {1..30}; do
-            if curl --silent --fail http://localhost:9200; then
-              echo "✅ Elasticsearch está listo."
-              break
-            fi
-            echo "🔁 Intento $i: Elasticsearch aún no responde..."
-            sleep 2
-          done
-          if [ $i -eq 30 ]; then
-            echo "❌ No se pudo conectar a Elasticsearch."
-            exit 1
-          fi
+      - name: Ejecutar script de Python
+        run: python script.py
 
-      - name: Run the script
-        run: python3 script.py
+      - name: Crear archivo .nojekyll
+        run: touch .nojekyll
+
+      - name: Subir archivos generados como artefacto
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Desplegar en GitHub Pages
+        uses: actions/deploy-pages@v4
