@@ -1,4 +1,4 @@
-name: Elasticsearch Setup
+name: Elasticsearch Visualization
 
 on:
   push:
@@ -6,55 +6,37 @@ on:
       - main
 
 jobs:
-  elasticsearch:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v2
+      - name: Clonar el repositorio
+        uses: actions/checkout@v3
 
-    # Levantar Elasticsearch usando Docker
-    - name: Levantar Elasticsearch
-      run: |
-        docker pull docker.elastic.co/elasticsearch/elasticsearch:8.13.0
-        docker run -d --name elasticsearch -p 9301:9200 \
-          -e "discovery.type=single-node" \
-          -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
-          docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+      - name: Levantar Elasticsearch
+        run: |
+          docker run -d --name elasticsearch \
+            -p 9200:9200 \
+            -e "discovery.type=single-node" \
+            -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
+            docker.elastic.co/elasticsearch/elasticsearch:8.13.0
 
-    # Verificar que el contenedor esté corriendo
-    - name: Verificar contenedores en ejecución
-      run: |
-        docker ps
+      - name: Esperar a que Elasticsearch esté listo
+        run: |
+          echo "Esperando a Elasticsearch..."
+          for i in {1..30}; do
+            if curl -s http://localhost:9200 >/dev/null; then
+              echo "Elasticsearch está listo."
+              break
+            fi
+            echo "Esperando..."
+            sleep 5
+          done
 
-    # Esperar a que Elasticsearch esté listo (hasta 30 segundos)
-    - name: Esperando Elasticsearch a que esté listo...
-      run: |
-        for i in {1..30}; do
-          if curl -s "http://localhost:9301/_cluster/health?wait_for_status=yellow&timeout=50s"; then
-            echo "Elasticsearch está listo"
-            break
-          fi
-          echo "Esperando que Elasticsearch esté listo..."
-          sleep 5
-        done
+      - name: Instalar dependencias de Python
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install elasticsearch pandas matplotlib seaborn
 
-    # Verificar los logs de Elasticsearch para cualquier error
-    - name: Verificar los logs de Elasticsearch
-      run: |
-        docker logs elasticsearch
-
-    # Verificar puertos en uso para asegurarse de que no haya conflictos
-    - name: Verificar puertos en uso
-      run: |
-        netstat -tuln
-
-    # Instalar dependencias de Python, incluyendo elasticsearch, pandas, matplotlib y seaborn
-    - name: Instalar dependencias de Python
-      run: |
-        python3 -m pip install --upgrade pip
-        pip install elasticsearch pandas matplotlib seaborn
-
-    # Ejecutar script.py
-    - name: Ejecutar script.py
-      run: |
-        python3 script.py
+      - name: Ejecutar script Python
+        run: python3 script.py
