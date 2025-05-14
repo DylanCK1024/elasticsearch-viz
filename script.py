@@ -3,39 +3,41 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Leer CSV
-df = pd.read_csv("movies.csv")
+# Conectar a Elasticsearch
+es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
 
-# Convertir columnas con tipos complejos a texto plano
-for col in ['genres', 'keywords', 'cast', 'crew', 'production_companies', 'production_countries', 'spoken_languages']:
-    if col in df.columns:
-        df[col] = df[col].astype(str)
+# Verificar la conexión
+if es.ping():
+    print("Conectado a Elasticsearch")
+else:
+    print("No se pudo conectar a Elasticsearch")
 
-# Reemplazar NaNs
-df = df.fillna("")
+# Nombre del índice
+index_name = 'tu_indice'
 
-# Conectarse a Elasticsearch (si está corriendo en Docker sin SSL)
-es = Elasticsearch("http://elasticsearch:9200", verify_certs=False)
+# Buscar los datos en Elasticsearch
+response = es.search(index=index_name, body={
+    "query": {
+        "match_all": {}
+    },
+    "size": 10000  # Ajusta el tamaño si es necesario
+})
 
-# Crear índice si no existe
-index_name = "movies"
-if not es.indices.exists(index=index_name):
-    es.indices.create(index=index_name)
+# Extraer los datos de la respuesta
+hits = response['hits']['hits']
 
-# Indexar documentos
-for _, row in df.iterrows():
-    try:
-        doc = row.to_dict()
-        es.index(index=index_name, document=doc)
-    except Exception as e:
-        print(f"Error al indexar documento: {e}")
+# Convertir los resultados a un DataFrame de pandas
+data = pd.DataFrame([hit['_source'] for hit in hits])
 
-# Graficar: promedio de votos por idioma original
-summary = df.groupby("original_language")["vote_average"].mean().sort_values(ascending=False).head(10)
+# Mostrar las primeras filas de los datos para asegurarse de que se han recuperado correctamente
+print(data.head())
+
+# Crear una gráfica (ajustar según tus datos)
 plt.figure(figsize=(10, 6))
-sns.barplot(x=summary.values, y=summary.index)
-plt.xlabel("Promedio de Voto")
-plt.ylabel("Idioma Original")
-plt.title("Top 10 idiomas con mayor promedio de voto")
+sns.barplot(x=data.columns[0], y=data.columns[1], data=data)  # Ajusta las columnas para la gráfica
+plt.title('Gráfica de Datos de Elasticsearch')
+plt.xlabel(data.columns[0])
+plt.ylabel(data.columns[1])
+plt.xticks(rotation=45)
 plt.tight_layout()
-plt.savefig("grafica.png")
+plt.show()
