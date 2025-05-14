@@ -2,42 +2,52 @@ from elasticsearch import Elasticsearch
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import json
+import time
 
-# Conectar a Elasticsearch
-es = Elasticsearch([{'host': 'localhost', 'port': 9200, 'scheme': 'http'}])
+# Conectar a Elasticsearch sin seguridad
+es = Elasticsearch("http://localhost:9200")
 
-# Verificar la conexión
-if es.ping():
-    print("Conectado a Elasticsearch")
+# Esperar que Elasticsearch esté disponible
+for i in range(30):
+    try:
+        if es.ping():
+            print("✅ Elasticsearch está listo.")
+            break
+    except:
+        time.sleep(2)
 else:
-    print("No se pudo conectar a Elasticsearch")
+    raise Exception("❌ No se pudo conectar a Elasticsearch.")
 
-# Nombre del índice
-index_name = 'tu_indice'
+# Crear índice si no existe
+index_name = "mi_indice"
+if not es.indices.exists(index=index_name):
+    es.indices.create(index=index_name)
 
-# Buscar los datos en Elasticsearch
-response = es.search(index=index_name, body={
-    "query": {
-        "match_all": {}
-    },
-    "size": 10000  # Ajusta el tamaño si es necesario
-})
+# Datos de ejemplo
+data = [
+    {"nombre": "Producto A", "precio": 100},
+    {"nombre": "Producto B", "precio": 150},
+    {"nombre": "Producto C", "precio": 200},
+]
 
-# Extraer los datos de la respuesta
-hits = response['hits']['hits']
+# Indexar datos
+for i, doc in enumerate(data):
+    es.index(index=index_name, id=i + 1, document=doc)
 
-# Convertir los resultados a un DataFrame de pandas
-data = pd.DataFrame([hit['_source'] for hit in hits])
+# Obtener los documentos
+res = es.search(index=index_name, body={"query": {"match_all": {}}})
+docs = [hit["_source"] for hit in res["hits"]["hits"]]
 
-# Mostrar las primeras filas de los datos para asegurarse de que se han recuperado correctamente
-print(data.head())
+# Convertir a DataFrame
+df = pd.DataFrame(docs)
 
-# Crear una gráfica (ajustar según tus datos)
-plt.figure(figsize=(10, 6))
-sns.barplot(x=data.columns[0], y=data.columns[1], data=data)  # Ajusta las columnas para la gráfica
-plt.title('Gráfica de Datos de Elasticsearch')
-plt.xlabel(data.columns[0])
-plt.ylabel(data.columns[1])
-plt.xticks(rotation=45)
+# Graficar
+plt.figure(figsize=(8, 5))
+sns.barplot(x="nombre", y="precio", data=df)
+plt.title("Precios de Productos")
+plt.xlabel("Producto")
+plt.ylabel("Precio")
 plt.tight_layout()
-plt.show()
+plt.savefig("grafica.png")
+print("📊 Gráfica guardada como grafica.png")
