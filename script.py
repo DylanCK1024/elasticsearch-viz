@@ -1,18 +1,31 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv("covid.csv")
-df_mx = df[(df['location'] == 'Mexico') & (df['date'].str.startswith('2021'))]
-df_mx = df_mx[['date', 'new_cases']].fillna(0)
-df_mx['date'] = pd.to_datetime(df_mx['date'])
-df_mx = df_mx.sort_values('date')
+# Crear un DataFrame de ejemplo
+data = pd.DataFrame({
+    'Día': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'],
+    'Visitas': [120, 230, 180, 250, 300]
+})
 
-plt.figure(figsize=(12, 6))
-plt.plot(df_mx['date'], df_mx['new_cases'], label="Nuevos casos")
-plt.title("COVID-19 en México - 2021")
-plt.xlabel("Fecha")
-plt.ylabel("Casos diarios")
-plt.legend()
-plt.grid()
+# Crear gráfica
+plt.figure(figsize=(8, 5))
+plt.bar(data['Día'], data['Visitas'], color='skyblue')
+plt.title('Visitas por Día')
+plt.xlabel('Día')
+plt.ylabel('Visitas')
 plt.tight_layout()
-plt.savefig("covid_mexico_2021.png")
+
+# Guardar como imagen
+plt.savefig('grafica.png')
+
+# Crear archivo HTML para mostrar la imagen
+with open("index.html", "w") as f:
+    f.write(f"""
+    <html>
+      <head><title>Gráfica</title></head>
+      <body>
+        <h1>Visitas Semanales</h1>
+        <img src="grafica.png" alt="Gráfica de visitas">
+      </body>
+    </html>
+    """)
