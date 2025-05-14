@@ -3,10 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Leer el archivo CSV
+# Leer CSV
 df = pd.read_csv("movies.csv")
 
-# Convertir columnas complejas a texto plano
+# Convertir columnas con tipos complejos a texto plano
 for col in ['genres', 'keywords', 'cast', 'crew', 'production_companies', 'production_countries', 'spoken_languages']:
     if col in df.columns:
         df[col] = df[col].astype(str)
@@ -14,15 +14,15 @@ for col in ['genres', 'keywords', 'cast', 'crew', 'production_companies', 'produ
 # Reemplazar NaNs
 df = df.fillna("")
 
-# Conectarse a Elasticsearch
-es = Elasticsearch("http://localhost:9200")
+# Conectarse a Elasticsearch (si está corriendo en Docker sin SSL)
+es = Elasticsearch("http://elasticsearch:9200", verify_certs=False)
 
 # Crear índice si no existe
 index_name = "movies"
 if not es.indices.exists(index=index_name):
     es.indices.create(index=index_name)
 
-# Indexar los documentos
+# Indexar documentos
 for _, row in df.iterrows():
     try:
         doc = row.to_dict()
@@ -30,10 +30,8 @@ for _, row in df.iterrows():
     except Exception as e:
         print(f"Error al indexar documento: {e}")
 
-# Generar gráfica: promedio de votos por idioma original
+# Graficar: promedio de votos por idioma original
 summary = df.groupby("original_language")["vote_average"].mean().sort_values(ascending=False).head(10)
-
-# Crear gráfico
 plt.figure(figsize=(10, 6))
 sns.barplot(x=summary.values, y=summary.index)
 plt.xlabel("Promedio de Voto")
