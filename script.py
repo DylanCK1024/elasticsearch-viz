@@ -1,31 +1,36 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Crear un DataFrame de ejemplo
-data = pd.DataFrame({
-    'Día': ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'],
-    'Visitas': [120, 230, 180, 250, 300]
-})
+# Leer el archivo CSV del dataset de películas (suponiendo que está en la misma carpeta que el script)
+df = pd.read_csv('movies.csv')
 
-# Crear gráfica
-plt.figure(figsize=(8, 5))
-plt.bar(data['Día'], data['Visitas'], color='skyblue')
-plt.title('Visitas por Día')
-plt.xlabel('Día')
-plt.ylabel('Visitas')
-plt.tight_layout()
+# Verificar las primeras filas del dataset para conocer su estructura
+print(df.head())
 
-# Guardar como imagen
-plt.savefig('grafica.png')
+# Filtramos y limpiamos las columnas necesarias
+df_filtered = df[['budget', 'revenue', 'vote_average', 'title']].dropna()
 
-# Crear archivo HTML para mostrar la imagen
+# Graficar la relación entre presupuesto, ingresos y promedio de votos
+plt.figure(figsize=(12, 6))
+
+# Graficamos presupuesto vs. ingresos
+plt.scatter(df_filtered['budget'], df_filtered['revenue'], c=df_filtered['vote_average'], cmap='viridis', alpha=0.6)
+plt.title('Relación entre Presupuesto y Ingresos de Películas')
+plt.xlabel('Presupuesto (USD)')
+plt.ylabel('Ingresos (USD)')
+plt.colorbar(label='Promedio de Votos')
+
+# Guardar la imagen como archivo PNG
+plt.savefig('grafica_peliculas.png')
+
+# Crear un archivo HTML para mostrar la imagen en GitHub Pages
 with open("index.html", "w") as f:
     f.write(f"""
     <html>
-      <head><title>Gráfica</title></head>
+      <head><title>Gráfica de Películas</title></head>
       <body>
-        <h1>Visitas Semanales</h1>
-        <img src="grafica.png" alt="Gráfica de visitas">
+        <h1>Relación entre Presupuesto, Ingresos y Promedio de Votos de Películas</h1>
+        <img src="grafica_peliculas.png" alt="Relación entre Presupuesto e Ingresos de Películas">
       </body>
     </html>
     """)
