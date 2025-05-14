@@ -24,10 +24,10 @@ jobs:
 
       - name: Instalar dependencias
         run: |
-          pip install pandas matplotlib seaborn  # Instalamos seaborn junto con pandas y matplotlib
+          pip install pandas matplotlib seaborn elasticsearch  # Añadimos elasticsearch
 
       - name: Ejecutar script de Python
-        run: python script.py
+        run: python script.py  # El script cargará datos en Elasticsearch y generará la gráfica
 
       - name: Crear archivo .nojekyll
         run: touch .nojekyll
@@ -35,7 +35,7 @@ jobs:
       - name: Subir archivos generados como artefacto
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: ./
 
   deploy:
     needs: build
