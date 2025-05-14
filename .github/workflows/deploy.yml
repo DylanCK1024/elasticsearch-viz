@@ -40,11 +40,25 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
       - name: Configurar Git
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@users.noreply.github.com"
 
-      - name: Verificar si la rama gh-pages existe, si no crearla
+      - name: Crear la rama gh-pages si no existe
         run: |
           git fetch origin
+          git checkout --orphan gh-pages  # Crea una rama huérfana
+          git reset --hard
+          git clean -fd
+          git push origin gh-pages --force  # Empuja la rama gh-pages al repositorio
+
+      - name: Subir a GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./  # O la ruta de tus archivos generados
