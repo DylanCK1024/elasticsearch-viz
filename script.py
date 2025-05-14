@@ -1,54 +1,77 @@
-from elasticsearch import Elasticsearch
 import pandas as pd
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
-import time
 
-# Conectar a Elasticsearch (ajustado para puerto 9200)
-es = Elasticsearch("http://localhost:9200")
+# Leer el archivo CSV del dataset de películas
+df = pd.read_csv('movies.csv')
 
-# Esperar a que Elasticsearch esté listo (hasta 60 segundos)
-print("⏳ Esperando a que Elasticsearch esté disponible...")
-for i in range(30):
-    try:
-        if es.ping():
-            print("✅ Elasticsearch está listo.")
-            break
-    except Exception as e:
-        print(f"🔁 Intento {i + 1}: Elasticsearch aún no responde...")
-        time.sleep(2)
-else:
-    raise Exception("❌ No se pudo conectar a Elasticsearch.")
+# Limpiar y filtrar las columnas necesarias
+df_filtered = df[['budget', 'revenue', 'vote_average', 'title', 'genres']].dropna()
 
-# Crear índice si no existe
-index_name = "mi_indice"
-if not es.indices.exists(index=index_name):
-    es.indices.create(index=index_name)
+# Establecer un estilo visual con Seaborn
+sns.set(style="whitegrid")
 
-# Datos de ejemplo
-data = [
-    {"nombre": "Producto A", "precio": 100},
-    {"nombre": "Producto B", "precio": 150},
-    {"nombre": "Producto C", "precio": 200},
-]
+# Crear una figura para los gráficos
+plt.figure(figsize=(15, 10))
 
-# Indexar datos
-for i, doc in enumerate(data):
-    es.index(index=index_name, id=i + 1, document=doc)
+# Gráfico de dispersión 3D para visualizar la relación entre presupuesto, ingresos y promedio de votos
+fig = plt.figure(figsize=(15, 10))
+ax = fig.add_subplot(111, projection='3d')
 
-# Obtener los documentos
-res = es.search(index=index_name, body={"query": {"match_all": {}}})
-docs = [hit["_source"] for hit in res["hits"]["hits"]]
+# Ejes del gráfico
+ax.scatter(df_filtered['budget'], df_filtered['revenue'], df_filtered['vote_average'], c=df_filtered['vote_average'], cmap='viridis', alpha=0.7)
 
-# Convertir a DataFrame
-df = pd.DataFrame(docs)
+# Etiquetas y título
+ax.set_xlabel('Presupuesto (USD)')
+ax.set_ylabel('Ingresos (USD)')
+ax.set_zlabel('Promedio de Votos')
+ax.set_title('Relación entre Presupuesto, Ingresos y Promedio de Votos')
 
-# Graficar
-plt.figure(figsize=(8, 5))
-sns.barplot(x="nombre", y="precio", data=df)
-plt.title("Precios de Productos")
-plt.xlabel("Producto")
-plt.ylabel("Precio")
-plt.tight_layout()
-plt.savefig("grafica.png")
-print("📊 Gráfica guardada como grafica.png")
+# Guardar el gráfico 3D como archivo PNG
+plt.savefig('grafica_3d.png')
+
+# Crear un histograma para mostrar la distribución del presupuesto y los ingresos
+plt.figure(figsize=(12, 6))
+plt.hist(df_filtered['budget'], bins=50, alpha=0.6, color='blue', label='Presupuesto')
+plt.hist(df_filtered['revenue'], bins=50, alpha=0.6, color='green', label='Ingresos')
+plt.title('Distribución de Presupuesto e Ingresos de Películas')
+plt.xlabel('Monto (USD)')
+plt.ylabel('Frecuencia')
+plt.legend()
+
+# Guardar el histograma como archivo PNG
+plt.savefig('histograma.png')
+
+# Gráfico de barras para mostrar el promedio de votos por género
+# Primero, vamos a dividir los géneros y contar cuántas películas hay por género
+df_filtered['genres'] = df_filtered['genres'].apply(lambda x: x.split('|')[0] if isinstance(x, str) else 'Unknown')
+vote_by_genre = df_filtered.groupby('genres')['vote_average'].mean().sort_values(ascending=False)
+
+# Crear el gráfico de barras
+plt.figure(figsize=(12, 6))
+vote_by_genre.plot(kind='bar', color='teal')
+plt.title('Promedio de Votos por Género de Películas')
+plt.xlabel('Género')
+plt.ylabel('Promedio de Votos')
+plt.xticks(rotation=90)
+
+# Guardar el gráfico de barras como archivo PNG
+plt.savefig('grafica_barras.png')
+
+# Crear un archivo HTML para mostrar todos los gráficos en GitHub Pages
+with open("index.html", "w") as f:
+    f.write(f"""
+    <html>
+      <head><title>Gráficas de Películas</title></head>
+      <body>
+        <h1>Visualización Detallada de Películas</h1>
+        <h2>1. Relación entre Presupuesto, Ingresos y Promedio de Votos</h2>
+        <img src="grafica_3d.png" alt="Gráfico 3D de Presupuesto vs. Ingresos vs. Promedio de Votos">
+        <h2>2. Distribución de Presupuesto e Ingresos</h2>
+        <img src="histograma.png" alt="Histograma de Presupuesto e Ingresos">
+        <h2>3. Promedio de Votos por Género</h2>
+        <img src="grafica_barras.png" alt="Gráfico de Promedio de Votos por Género">
+      </body>
+    </html>
+    """)
