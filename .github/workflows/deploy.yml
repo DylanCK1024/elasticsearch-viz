@@ -13,7 +13,7 @@ jobs:
       elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
         ports:
-          - 9200:9200
+          - 9201:9200  # Cambié el puerto a 9201 para evitar conflicto
         options: >-
           --env discovery.type=single-node
           --env "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -27,7 +27,7 @@ jobs:
     - name: Configurar Elasticsearch
       run: |
         docker pull docker.elastic.co/elasticsearch/elasticsearch:8.13.0
-        docker run -d --name elasticsearch -p 9200:9200 \
+        docker run -d --name elasticsearch -p 9201:9200 \
           -e "discovery.type=single-node" \
           -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
           docker.elastic.co/elasticsearch/elasticsearch:8.13.0
@@ -35,14 +35,14 @@ jobs:
     # Esperar que Elasticsearch esté listo
     - name: Esperar que Elasticsearch esté listo
       run: |
-        until curl -s http://localhost:9200 > /dev/null; do
+        until curl -s http://localhost:9201 > /dev/null; do  # Cambié el puerto a 9201
           echo "Esperando Elasticsearch..."
           sleep 5
         done
 
     # Verificar que Elasticsearch esté funcionando
     - name: Comprobar Elasticsearch
-      run: curl -X GET "localhost:9200/"
+      run: curl -X GET "localhost:9201/"  # Cambié el puerto a 9201
 
     # Instalar dependencias necesarias
     - name: Instalar dependencias
