@@ -34,5 +34,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./  # O la ruta de tus archivos generados
-          target_branch: gh-pages  # Asegúrate de que esta rama no exista antes de ejecutar
+          publish_branch: gh-pages   # Cambié target_branch por publish_branch
+          publish_dir: ./           # O la ruta de tus archivos generados
