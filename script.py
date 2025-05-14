@@ -2,19 +2,20 @@ from elasticsearch import Elasticsearch
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import json
 import time
 
-# Conectar a Elasticsearch sin seguridad
+# Conectar a Elasticsearch (ajustado para puerto 9200)
 es = Elasticsearch("http://localhost:9200")
 
-# Esperar que Elasticsearch esté disponible
+# Esperar a que Elasticsearch esté listo (hasta 60 segundos)
+print("⏳ Esperando a que Elasticsearch esté disponible...")
 for i in range(30):
     try:
         if es.ping():
             print("✅ Elasticsearch está listo.")
             break
-    except:
+    except Exception as e:
+        print(f"🔁 Intento {i + 1}: Elasticsearch aún no responde...")
         time.sleep(2)
 else:
     raise Exception("❌ No se pudo conectar a Elasticsearch.")
