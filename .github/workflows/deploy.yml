@@ -1,4 +1,4 @@
-name: Elasticsearch Viz
+name: Elasticsearch Setup
 
 on:
   push:
@@ -8,41 +8,47 @@ on:
 jobs:
   elasticsearch:
     runs-on: ubuntu-latest
-
     steps:
     - name: Check out repository
       uses: actions/checkout@v2
 
-    - name: Set up Docker
-      uses: docker/setup-buildx-action@v2
-
-    - name: Detener y eliminar contenedor Elasticsearch si existe
-      run: |
-        docker ps -q --filter "name=elasticsearch" | xargs -r docker stop | xargs -r docker rm
-
-    - name: Pull Elasticsearch image
+    # Levantar Elasticsearch usando Docker
+    - name: Levantar Elasticsearch
       run: |
         docker pull docker.elastic.co/elasticsearch/elasticsearch:8.13.0
-
-    - name: Run Elasticsearch container
-      run: |
         docker run -d --name elasticsearch -p 9301:9200 \
           -e "discovery.type=single-node" \
           -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
           docker.elastic.co/elasticsearch/elasticsearch:8.13.0
 
-    - name: Wait for Elasticsearch to be ready
+    # Verificar que el contenedor esté corriendo
+    - name: Verificar contenedores en ejecución
       run: |
-        until curl -s http://localhost:9301/_cluster/health?pretty | grep -q '"status" : "green"'; do
-          echo "Esperando Elasticsearch a que esté listo...";
-          sleep 5;
+        docker ps
+
+    # Esperar a que Elasticsearch esté listo (hasta 30 segundos)
+    - name: Esperando Elasticsearch a que esté listo...
+      run: |
+        for i in {1..30}; do
+          if curl -s "http://localhost:9301/_cluster/health?wait_for_status=yellow&timeout=50s"; then
+            echo "Elasticsearch está listo"
+            break
+          fi
+          echo "Esperando que Elasticsearch esté listo..."
+          sleep 5
         done
 
-    - name: Install dependencies
+    # Verificar los logs de Elasticsearch para cualquier error
+    - name: Verificar los logs de Elasticsearch
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        docker logs elasticsearch
 
-    - name: Run Python script
+    # Verificar puertos en uso para asegurarse de que no haya conflictos
+    - name: Verificar puertos en uso
       run: |
-        python script.py
+        netstat -tuln
+
+    # Ejemplo de tu script de Python
+    - name: Ejecutar script.py
+      run: |
+        python3 script.py
