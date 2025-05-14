@@ -4,15 +4,6 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,15 +26,12 @@ jobs:
       - name: Crear archivo .nojekyll
         run: touch .nojekyll
 
-      - name: Subir artefactos para Pages
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: .
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Desplegar a GitHub Pages
-        uses: actions/deploy-pages@v2
+      - name: Subir a GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./  # Cambia esto a la ruta donde están tus archivos HTML y gráficos
