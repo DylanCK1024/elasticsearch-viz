@@ -31,11 +31,8 @@ jobs:
       - name: Crear archivo .nojekyll
         run: touch .nojekyll
 
-      - name: Cargar acción upload-artifact (workaround)
-        uses: actions/upload-artifact@v3
-
       - name: Subir archivos generados como artefacto
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: .
 
@@ -45,4 +42,4 @@ jobs:
 
     steps:
       - name: Desplegar en GitHub Pages
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@v4
