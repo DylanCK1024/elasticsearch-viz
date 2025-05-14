@@ -8,35 +8,32 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Clonar el repositorio
-        uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-      - name: Levantar Elasticsearch
-        run: |
-          docker run -d --name elasticsearch \
-            -p 9200:9200 \
-            -e "discovery.type=single-node" \
-            -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
-            docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    - name: Iniciar Elasticsearch sin seguridad
+      run: |
+        docker run -d --name elasticsearch -p 9200:9200 \
+          -e "discovery.type=single-node" \
+          -e "xpack.security.enabled=false" \
+          -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
+          docker.elastic.co/elasticsearch/elasticsearch:8.13.0
 
-      - name: Esperar a que Elasticsearch esté listo
-        run: |
-          echo "Esperando a Elasticsearch..."
-          for i in {1..30}; do
-            if curl -s http://localhost:9200 >/dev/null; then
-              echo "Elasticsearch está listo."
-              break
-            fi
-            echo "Esperando..."
-            sleep 5
-          done
+    - name: Esperar que Elasticsearch esté listo
+      run: |
+        echo "Esperando a Elasticsearch..."
+        for i in {1..30}; do
+          if curl -s http://localhost:9200 >/dev/null; then
+            echo "Elasticsearch está listo!"
+            break
+          fi
+          sleep 2
+        done
 
-      - name: Instalar dependencias de Python
-        run: |
-          python3 -m pip install --upgrade pip
-          pip install elasticsearch pandas matplotlib seaborn
+    - name: Instalar dependencias
+      run: |
+        pip install elasticsearch pandas matplotlib seaborn
 
-      - name: Ejecutar script Python
-        run: python3 script.py
+    - name: Ejecutar script
+      run: python3 script.py
