@@ -1,52 +1,59 @@
-from elasticsearch import Elasticsearch
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+name: Build and Deploy to GitHub Pages
 
-# Leer el archivo CSV
-df = pd.read_csv("movies.csv")
+on:
+  push:
+    branches: [main]
 
-# Convertir columnas con listas o diccionarios a cadenas de texto
-columns_to_convert = [
-    'genres', 'keywords', 'cast', 'crew',
-    'production_companies', 'production_countries', 'spoken_languages'
-]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-for col in columns_to_convert:
-    if col in df.columns:
-        df[col] = df[col].astype(str)
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: false
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -f http://localhost:9200 || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
-# Reemplazar valores nulos con cadenas vacías
-df.fillna("", inplace=True)
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
 
-# Conectar a Elasticsearch (localhost:9200, asegúrate de que esté corriendo)
-es = Elasticsearch("http://localhost:9200")
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-# Nombre del índice
-index_name = "movies"
+      - name: Instalar dependencias
+        run: |
+          pip install pandas matplotlib seaborn elasticsearch
 
-# Crear el índice si no existe
-if not es.indices.exists(index=index_name):
-    es.indices.create(index=index_name)
+      - name: Ejecutar script de Python
+        run: python script.py
 
-# Indexar documentos en Elasticsearch
-for _, row in df.iterrows():
-    try:
-        doc = row.to_dict()
-        es.index(index=index_name, document=doc)
-    except Exception as e:
-        print(f"Error al indexar documento: {e}")
+      - name: Crear archivo .nojekyll
+        run: touch .nojekyll
 
-# Crear una gráfica: promedio de votación por idioma original (Top 10)
-try:
-    summary = df.groupby("original_language")["vote_average"].mean().sort_values(ascending=False).head(10)
-    
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x=summary.values, y=summary.index)
-    plt.xlabel("Promedio de Voto")
-    plt.ylabel("Idioma Original")
-    plt.title("Top 10 idiomas con mayor promedio de voto")
-    plt.tight_layout()
-    plt.savefig("grafica.png")
-except Exception as e:
-    print(f"Error al generar la gráfica: {e}")
+      - name: Subir archivos generados como artefacto
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Desplegar en GitHub Pages
+        uses: actions/deploy-pages@v4
