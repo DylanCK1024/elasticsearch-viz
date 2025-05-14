@@ -23,7 +23,8 @@ jobs:
           python-version: '3.10'
 
       - name: Instalar dependencias
-        run: pip install pandas matplotlib
+        run: |
+          pip install pandas matplotlib seaborn  # Instalamos seaborn junto con pandas y matplotlib
 
       - name: Ejecutar script de Python
         run: python script.py
