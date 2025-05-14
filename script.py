@@ -6,30 +6,23 @@ import seaborn as sns
 # Leer el archivo CSV
 df = pd.read_csv("movies.csv")
 
-# Convertir columnas con listas o diccionarios a cadenas de texto
-columns_to_convert = [
-    'genres', 'keywords', 'cast', 'crew',
-    'production_companies', 'production_countries', 'spoken_languages'
-]
-
-for col in columns_to_convert:
+# Convertir columnas complejas a texto plano
+for col in ['genres', 'keywords', 'cast', 'crew', 'production_companies', 'production_countries', 'spoken_languages']:
     if col in df.columns:
         df[col] = df[col].astype(str)
 
-# Reemplazar valores nulos con cadenas vacías
-df.fillna("", inplace=True)
+# Reemplazar NaNs
+df = df.fillna("")
 
-# Conectar a Elasticsearch (localhost:9200, asegúrate de que esté corriendo)
+# Conectarse a Elasticsearch
 es = Elasticsearch("http://localhost:9200")
 
-# Nombre del índice
+# Crear índice si no existe
 index_name = "movies"
-
-# Crear el índice si no existe
 if not es.indices.exists(index=index_name):
     es.indices.create(index=index_name)
 
-# Indexar documentos en Elasticsearch
+# Indexar los documentos
 for _, row in df.iterrows():
     try:
         doc = row.to_dict()
@@ -37,16 +30,14 @@ for _, row in df.iterrows():
     except Exception as e:
         print(f"Error al indexar documento: {e}")
 
-# Crear una gráfica: promedio de votación por idioma original (Top 10)
-try:
-    summary = df.groupby("original_language")["vote_average"].mean().sort_values(ascending=False).head(10)
-    
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x=summary.values, y=summary.index)
-    plt.xlabel("Promedio de Voto")
-    plt.ylabel("Idioma Original")
-    plt.title("Top 10 idiomas con mayor promedio de voto")
-    plt.tight_layout()
-    plt.savefig("grafica.png")
-except Exception as e:
-    print(f"Error al generar la gráfica: {e}")
+# Generar gráfica: promedio de votos por idioma original
+summary = df.groupby("original_language")["vote_average"].mean().sort_values(ascending=False).head(10)
+
+# Crear gráfico
+plt.figure(figsize=(10, 6))
+sns.barplot(x=summary.values, y=summary.index)
+plt.xlabel("Promedio de Voto")
+plt.ylabel("Idioma Original")
+plt.title("Top 10 idiomas con mayor promedio de voto")
+plt.tight_layout()
+plt.savefig("grafica.png")
