@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Conectar a Elasticsearch
-es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+es = Elasticsearch([{'host': 'localhost', 'port': 9200, 'scheme': 'http'}])
 
 # Verificar la conexión
 if es.ping():
