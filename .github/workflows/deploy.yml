@@ -1,20 +1,20 @@
-name: Elasticsearch + Python + GitHub Pages
+name: Elasticsearch Visualization
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clonar repositorio
-        uses: actions/checkout@v4
+      - name: Clonar el repositorio
+        uses: actions/checkout@v3
 
-      - name: Iniciar Elasticsearch con Docker
+      - name: Levantar Elasticsearch
         run: |
-          docker pull docker.elastic.co/elasticsearch/elasticsearch:8.13.0
           docker run -d --name elasticsearch \
             -p 9200:9200 \
             -e "discovery.type=single-node" \
@@ -24,13 +24,12 @@ jobs:
       - name: Esperar a que Elasticsearch esté listo
         run: |
           echo "Esperando a Elasticsearch..."
-          for i in {1..60}; do
-            status=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:9200)
-            if [ "$status" = "200" ]; then
-              echo "Elasticsearch está listo (HTTP 200)."
+          for i in {1..30}; do
+            if curl -s http://localhost:9200 >/dev/null; then
+              echo "Elasticsearch está listo."
               break
             fi
-            echo "Esperando ($i)..."
+            echo "Esperando..."
             sleep 5
           done
 
@@ -41,11 +40,3 @@ jobs:
 
       - name: Ejecutar script Python
         run: python3 script.py
-
-      - name: Subir cambios a GitHub Pages
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Actualizar visualización"
-          git push
